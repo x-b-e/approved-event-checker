@@ -59,7 +59,6 @@ async function run() {
 
     const users = new Set<string>();
     for await (const review of flatten(list)) {
-      console.log("review: ", review);
       if (review.state === "APPROVED") {
         users.add(review.user.login);
         console.log(`approved by ${review.user.login}`);
@@ -71,6 +70,9 @@ async function run() {
     }
     let approved = true;
     let approvalsNeededFrom = approvals.split(",");
+    console.log(`approvalsNeededFrom: ${approvalsNeededFrom}`);
+    console.log(`users: ${Array.from(users)}`);
+
     for (const approvalNeededFromUser of approvalsNeededFrom) {
       if (!users.has(approvalNeededFromUser)) {
         approved = false;
