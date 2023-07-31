@@ -17,42 +17,17 @@ async function run() {
     }
     const payload = JSON.parse(await readFile(path, { encoding: "utf-8" }));
     const action = payload.action;
-    const state =
-      payload.review && payload.review.state ? payload.review.state : undefined;
+    if (!payload.review) {
+      await getApprovedUsers(token, nwo, payload.pull_request.number);
+      return;
+    }
+    const state = payload.review.state;
     if (!payload.pull_request) {
       core.setFailed("this event doesn't contain pull request");
       return;
     }
     if (action === "submitted" && state === "approved") {
-      const approvals = getApprovals();
-      const checkRequested = getCheckChangesRequested();
-      const octokit = new Octokit({ auth: `token ${token}` });
-      const [owner, repo] = nwo.split("/");
-      const options = octokit.pulls.listReviews.endpoint.merge({
-        owner,
-        repo,
-        pull_number: payload.pull_request.number
-      });
-      const list = map(
-        (response: Octokit.Response<Octokit.PullsListReviewsResponse>) =>
-          response.data,
-        octokit.paginate.iterator(options)
-      );
-
-      const users = new Set<string>();
-      for await (const review of flatten(list)) {
-        if (review && review.state === "APPROVED") {
-          users.add(review.user.login);
-        } else if (
-          checkRequested &&
-          review &&
-          review.state === "CHANGES_REQUESTED"
-        ) {
-          core.setOutput("approved", false);
-        }
-      }
-
-      core.setOutput("approved", approvals <= users.size);
+      await getApprovedUsers(token, nwo, payload.pull_request.number);
     } else {
       core.info(
         `${process.env.GITHUB_EVENT_NAME}/${action}/${state} is not suitable for check.`
@@ -60,6 +35,41 @@ async function run() {
     }
   } catch (error) {
     core.setFailed(error.message);
+  }
+
+  async function getApprovedUsers(
+    token: string,
+    nwo: string,
+    pull_number: number
+  ) {
+    const approvals = getApprovals();
+    const checkRequested = getCheckChangesRequested();
+    const octokit = new Octokit({ auth: `token ${token}` });
+    const [owner, repo] = nwo.split("/");
+    const options = octokit.pulls.listReviews.endpoint.merge({
+      owner,
+      repo,
+      pull_number
+    });
+    const list = map(
+      (response: Octokit.Response<Octokit.PullsListReviewsResponse>) =>
+        response.data,
+      octokit.paginate.iterator(options)
+    );
+
+    const users = new Set<string>();
+    for await (const review of flatten(list)) {
+      if (review.state === "APPROVED") {
+        users.add(review.user.login);
+        console.log(`approved by ${review.user.login}`);
+      } else if (checkRequested && review.state === "CHANGES_REQUESTED") {
+        console.log(`changes requested by ${review.user.login}`);
+        core.setOutput("approved", false);
+        break;
+      }
+    }
+
+    core.setOutput("approved", approvals <= users.size);
   }
 }
 
