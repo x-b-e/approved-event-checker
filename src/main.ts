@@ -42,7 +42,7 @@ async function run() {
     nwo: string,
     pull_number: number
   ) {
-    const approvals = getApprovals();
+    const approvals = core.getInput("approvals");
     const checkRequested = getCheckChangesRequested();
     const octokit = new Octokit({ auth: `token ${token}` });
     const [owner, repo] = nwo.split("/");
@@ -68,20 +68,17 @@ async function run() {
         break;
       }
     }
-
-    core.setOutput("approved", approvals <= users.size);
-  }
-}
-
-function getApprovals() {
-  const n = core.getInput("approvals");
-  if (/\d{1,2}/.test(n)) {
-    const i = Number.parseInt(n, 10);
-    if (0 < i) {
-      return i;
+    let approved = true;
+    let approvalsNeededFrom = approvals.split(",");
+    for (const approvalNeededFromUser of approvalsNeededFrom) {
+      if (!users.has(approvalNeededFromUser)) {
+        approved = false;
+        break;
+      }
     }
+
+    core.setOutput("approved", approved);
   }
-  return 1;
 }
 
 function getCheckChangesRequested() {
