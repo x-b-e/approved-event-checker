@@ -17,7 +17,7 @@ async function run() {
     }
     const payload = JSON.parse(await readFile(path, { encoding: "utf-8" }));
     const action = payload.action;
-    const state = payload.review.state;
+    const state = payload?.review?.state;
     if (!payload.pull_request) {
       core.setFailed("this event doesn't contain pull request");
       return;
@@ -32,9 +32,9 @@ async function run() {
 
       const users = new Set<string>();
       for await (const review of flatten(list)) {
-        if (review.state === "APPROVED") {
+        if (review?.state === "APPROVED") {
           users.add(review.user.login);
-        } else if (checkRequested && review.state === "CHANGES_REQUESTED") {
+        } else if (checkRequested && review?.state === "CHANGES_REQUESTED") {
           core.setOutput("approved", false);
         }
       }
