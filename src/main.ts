@@ -70,7 +70,9 @@ async function run() {
     }
     let approved = true;
     let approvalsNeededFrom = approvals.split(",");
-    console.log(`approvalsNeededFrom: ${approvalsNeededFrom}`);
+    console.log(
+      `approvalsNeededFrom: "${approvalsNeededFrom}" ${approvalsNeededFrom.length}`
+    );
     console.log(`users: ${Array.from(users)}`);
 
     for (const approvalNeededFromUser of approvalsNeededFrom) {
