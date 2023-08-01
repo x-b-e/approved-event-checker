@@ -69,7 +69,9 @@ async function run() {
       }
     }
     let approved = true;
-    let approvalsNeededFrom = approvals.split(",");
+    let approvalsNeededFrom = approvals
+      .split(",")
+      .filter(s => s.trim().length > 0);
     console.log(
       `approvalsNeededFrom: "${approvalsNeededFrom}" ${approvalsNeededFrom.length}`
     );
