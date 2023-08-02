@@ -16,23 +16,7 @@ async function run() {
       return;
     }
     const payload = JSON.parse(await readFile(path, { encoding: "utf-8" }));
-    const action = payload.action;
-    if (!payload.review) {
-      await getApprovedUsers(token, nwo, payload.pull_request.number);
-      return;
-    }
-    const state = payload.review.state;
-    if (!payload.pull_request) {
-      core.setFailed("this event doesn't contain pull request");
-      return;
-    }
-    if (action === "submitted" && state === "approved") {
-      await getApprovedUsers(token, nwo, payload.pull_request.number);
-    } else {
-      core.info(
-        `${process.env.GITHUB_EVENT_NAME}/${action}/${state} is not suitable for check.`
-      );
-    }
+    await getApprovedUsers(token, nwo, payload.pull_request.number);
   } catch (error) {
     core.setFailed(error.message);
   }
